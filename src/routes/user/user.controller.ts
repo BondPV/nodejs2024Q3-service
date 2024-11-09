@@ -13,7 +13,7 @@ import {
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePasswordDto } from './dto/update-user.dto';
-import { BusinessErrorFilter } from '../utils/businessError.filter';
+import { CustomServiceErrorFilter } from '../../utils/customServiceError.filter';
 
 @Controller('user')
 export class UserController {
@@ -30,23 +30,23 @@ export class UserController {
   }
 
   @Get(':id')
-  @UseFilters(BusinessErrorFilter)
+  @UseFilters(CustomServiceErrorFilter)
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.userService.findOne(id);
   }
 
   @Put(':id')
-  @UseFilters(BusinessErrorFilter)
+  @UseFilters(CustomServiceErrorFilter)
   update(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() UpdatePasswordDto: UpdatePasswordDto,
+    @Body() updatePasswordDto: UpdatePasswordDto,
   ) {
-    return this.userService.update(id, UpdatePasswordDto);
+    return this.userService.update(id, updatePasswordDto);
   }
 
   @Delete(':id')
   @HttpCode(204)
-  @UseFilters(BusinessErrorFilter)
+  @UseFilters(CustomServiceErrorFilter)
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.userService.remove(id);
   }

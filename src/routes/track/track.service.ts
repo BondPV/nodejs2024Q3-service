@@ -3,8 +3,8 @@ import { CreateTrackDto } from './dto/create-track.dto';
 import { UpdateTrackDto } from './dto/update-track.dto';
 import { Track } from './entities/track.entity';
 import { randomUUID } from 'crypto';
-import { BusinessError } from '../utils/businessError';
-import { getDB } from '../db';
+import { CustomServiceError } from '../../utils/customServiceError';
+import { getDB } from '../../db';
 
 @Injectable()
 export class TrackService {
@@ -28,19 +28,23 @@ export class TrackService {
 
   findOne(id: string) {
     const track = this.tracks.find((track) => track.id === id);
-    if (!track) throw new BusinessError('Track not found', 404);
+    if (!track) throw new CustomServiceError('Track not found', 404);
     return track;
   }
 
   update(id: string, updateTrackDto: UpdateTrackDto) {
     const track = this.tracks.find((track) => track.id === id);
-    if (!track) throw new BusinessError('Track not found', 404);
+    if (!track) throw new CustomServiceError('Track not found', 404);
     return Object.assign(track, updateTrackDto);
   }
 
   remove(id: string) {
     const index = this.tracks.findIndex((track) => track.id === id);
-    if (index === -1) throw new BusinessError('Track not found', 404);
+    if (index === -1) throw new CustomServiceError('Track not found', 404);
+
+    const favIndex = getDB().favorites.tracks.indexOf(id);
+    if (favIndex !== -1) getDB().favorites.tracks.splice(favIndex, 1);
+
     return this.tracks.splice(index, 1);
   }
 }

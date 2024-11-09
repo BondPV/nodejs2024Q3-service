@@ -1,10 +1,10 @@
 import { ExceptionFilter, Catch, ArgumentsHost } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { BusinessError } from './businessError';
+import { CustomServiceError } from './customServiceError';
 
-@Catch(BusinessError)
-export class BusinessErrorFilter implements ExceptionFilter {
-  catch(exception: BusinessError, host: ArgumentsHost) {
+@Catch(CustomServiceError)
+export class CustomServiceErrorFilter implements ExceptionFilter {
+  catch(exception: CustomServiceError, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();

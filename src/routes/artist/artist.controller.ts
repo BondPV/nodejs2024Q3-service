@@ -13,7 +13,7 @@ import {
 import { ArtistService } from './artist.service';
 import { CreateArtistDto } from './dto/create-artist.dto';
 import { UpdateArtistDto } from './dto/update-artist.dto';
-import { BusinessErrorFilter } from '../utils/businessError.filter';
+import { CustomServiceErrorFilter } from '../../utils/customServiceError.filter';
 
 @Controller('artist')
 export class ArtistController {
@@ -30,13 +30,13 @@ export class ArtistController {
   }
 
   @Get(':id')
-  @UseFilters(BusinessErrorFilter)
+  @UseFilters(CustomServiceErrorFilter)
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.artistService.findOne(id);
   }
 
   @Put(':id')
-  @UseFilters(BusinessErrorFilter)
+  @UseFilters(CustomServiceErrorFilter)
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateArtistDto: UpdateArtistDto,
@@ -46,7 +46,7 @@ export class ArtistController {
 
   @Delete(':id')
   @HttpCode(204)
-  @UseFilters(BusinessErrorFilter)
+  @UseFilters(CustomServiceErrorFilter)
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.artistService.remove(id);
   }

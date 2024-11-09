@@ -13,7 +13,7 @@ import {
 import { AlbumService } from './album.service';
 import { CreateAlbumDto } from './dto/create-album.dto';
 import { UpdateAlbumDto } from './dto/update-album.dto';
-import { BusinessErrorFilter } from '../utils/businessError.filter';
+import { CustomServiceErrorFilter } from '../../utils/customServiceError.filter';
 
 @Controller('album')
 export class AlbumController {
@@ -30,13 +30,13 @@ export class AlbumController {
   }
 
   @Get(':id')
-  @UseFilters(BusinessErrorFilter)
+  @UseFilters(CustomServiceErrorFilter)
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.albumService.findOne(id);
   }
 
   @Put(':id')
-  @UseFilters(BusinessErrorFilter)
+  @UseFilters(CustomServiceErrorFilter)
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateAlbumDto: UpdateAlbumDto,
@@ -46,7 +46,7 @@ export class AlbumController {
 
   @Delete(':id')
   @HttpCode(204)
-  @UseFilters(BusinessErrorFilter)
+  @UseFilters(CustomServiceErrorFilter)
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.albumService.remove(id);
   }

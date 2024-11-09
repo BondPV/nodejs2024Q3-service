@@ -13,7 +13,7 @@ import {
 import { TrackService } from './track.service';
 import { CreateTrackDto } from './dto/create-track.dto';
 import { UpdateTrackDto } from './dto/update-track.dto';
-import { BusinessErrorFilter } from '../utils/businessError.filter';
+import { CustomServiceErrorFilter } from '../../utils/customServiceError.filter';
 
 @Controller('track')
 export class TrackController {
@@ -30,13 +30,13 @@ export class TrackController {
   }
 
   @Get(':id')
-  @UseFilters(BusinessErrorFilter)
+  @UseFilters(CustomServiceErrorFilter)
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.trackService.findOne(id);
   }
 
   @Put(':id')
-  @UseFilters(BusinessErrorFilter)
+  @UseFilters(CustomServiceErrorFilter)
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateTrackDto: UpdateTrackDto,
@@ -46,7 +46,7 @@ export class TrackController {
 
   @Delete(':id')
   @HttpCode(204)
-  @UseFilters(BusinessErrorFilter)
+  @UseFilters(CustomServiceErrorFilter)
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.trackService.remove(id);
   }

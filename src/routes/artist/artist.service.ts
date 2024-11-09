@@ -3,8 +3,8 @@ import { CreateArtistDto } from './dto/create-artist.dto';
 import { UpdateArtistDto } from './dto/update-artist.dto';
 import { Artist } from './entities/artist.entity';
 import { randomUUID } from 'crypto';
-import { BusinessError } from '../utils/businessError';
-import { getDB } from '../db';
+import { CustomServiceError } from '../../utils/customServiceError';
+import { getDB } from '../../db';
 
 @Injectable()
 export class ArtistService {
@@ -26,22 +26,29 @@ export class ArtistService {
 
   findOne(id: string) {
     const artist = this.artists.find((artist) => artist.id === id);
-    if (!artist) throw new BusinessError('Artist not found', 404);
+    if (!artist) throw new CustomServiceError('Artist not found', 404);
     return artist;
   }
 
   update(id: string, updateArtistDto: UpdateArtistDto) {
     const artist = this.artists.find((artist) => artist.id === id);
-    if (!artist) throw new BusinessError('Artist not found', 404);
+    if (!artist) throw new CustomServiceError('Artist not found', 404);
     return Object.assign(artist, updateArtistDto);
   }
 
   remove(id: string) {
     const index = this.artists.findIndex((artist) => artist.id === id);
-    if (index === -1) throw new BusinessError('Artist not found', 404);
+    if (index === -1) throw new CustomServiceError('Artist not found', 404);
     getDB().tracks.forEach((track) => {
       if (track.artistId === id) track.artistId = null;
     });
+    getDB().albums.forEach((album) => {
+      if (album.artistId === id) album.artistId = null;
+    });
+
+    const favIndex = getDB().favorites.artists.indexOf(id);
+    if (favIndex !== -1) getDB().favorites.artists.splice(favIndex, 1);
+
     return this.artists.splice(index, 1);
   }
 }
