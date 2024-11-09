@@ -4,10 +4,11 @@ import { UpdatePasswordDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
 import { randomUUID } from 'crypto';
 import { BusinessError } from '../utils/businessError';
+import { getDB } from '../db';
 
 @Injectable()
 export class UserService {
-  private readonly users: User[] = [];
+  private readonly users: User[] = getDB().users;
 
   create({ login, password }: CreateUserDto) {
     const user: User = {
