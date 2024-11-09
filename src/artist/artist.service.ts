@@ -31,7 +31,6 @@ export class ArtistService {
   }
 
   update(id: string, updateArtistDto: UpdateArtistDto) {
-    console.dir(updateArtistDto);
     const artist = this.artists.find((artist) => artist.id === id);
     if (!artist) throw new BusinessError('Artist not found', 404);
     return Object.assign(artist, updateArtistDto);

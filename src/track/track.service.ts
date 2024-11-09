@@ -35,8 +35,6 @@ export class TrackService {
   update(id: string, updateTrackDto: UpdateTrackDto) {
     const track = this.tracks.find((track) => track.id === id);
     if (!track) throw new BusinessError('Track not found', 404);
-    if (updateTrackDto?.name === null || updateTrackDto?.duration === null)
-      throw new BusinessError('Name and duration cannot be null', 400);
     return Object.assign(track, updateTrackDto);
   }
 
