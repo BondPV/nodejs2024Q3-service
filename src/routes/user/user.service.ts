@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePasswordDto } from './dto/update-user.dto';
@@ -39,7 +39,7 @@ export class UserService {
     const user = this.users.find((user) => user.id === id);
 
     if (!user) {
-      throw new CustomServiceError('User not found', 404);
+      throw new CustomServiceError('User not found', HttpStatus.NOT_FOUND);
     }
 
     return this.toSafeUser(user);
@@ -49,11 +49,14 @@ export class UserService {
     const user = this.users.find((user) => user.id === id);
 
     if (!user) {
-      throw new CustomServiceError('User not found', 404);
+      throw new CustomServiceError('User not found', HttpStatus.NOT_FOUND);
     }
 
     if (user.password !== oldPassword) {
-      throw new CustomServiceError('Password is incorrect', 403);
+      throw new CustomServiceError(
+        'Password is incorrect',
+        HttpStatus.FORBIDDEN,
+      );
     }
 
     user.password = newPassword;
@@ -67,7 +70,7 @@ export class UserService {
     const index = this.users.findIndex((user) => user.id === id);
 
     if (index === -1) {
-      throw new CustomServiceError('User not found', 404);
+      throw new CustomServiceError('User not found', HttpStatus.NOT_FOUND);
     }
 
     this.users.splice(index, 1);

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { CreateTrackDto } from './dto/create-track.dto';
 import { UpdateTrackDto } from './dto/update-track.dto';
@@ -45,7 +45,7 @@ export class TrackService {
     const track = this.findTrackById(id);
 
     if (!track) {
-      throw new CustomServiceError('Track not found', 404);
+      throw new CustomServiceError('Track not found', HttpStatus.NOT_FOUND);
     }
 
     return track;
@@ -55,7 +55,7 @@ export class TrackService {
     const track = this.findTrackById(id);
 
     if (!track) {
-      throw new CustomServiceError('Track not found', 404);
+      throw new CustomServiceError('Track not found', HttpStatus.NOT_FOUND);
     }
 
     Object.assign(track, updateTrackDto);
@@ -67,7 +67,7 @@ export class TrackService {
     const index = this.tracks.findIndex((track) => track.id === id);
 
     if (index === -1) {
-      throw new CustomServiceError('Track not found', 404);
+      throw new CustomServiceError('Track not found', HttpStatus.NOT_FOUND);
     }
 
     this.removeFromFavorites(id);

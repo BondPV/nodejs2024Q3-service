@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { CreateAlbumDto } from './dto/create-album.dto';
 import { UpdateAlbumDto } from './dto/update-album.dto';
@@ -31,7 +31,7 @@ export class AlbumService {
     const album = this.findAlbumById(id);
 
     if (!album) {
-      throw new CustomServiceError('Album not found', 404);
+      throw new CustomServiceError('Album not found', HttpStatus.NOT_FOUND);
     }
 
     return this.toSafeAlbum(album);
@@ -41,7 +41,7 @@ export class AlbumService {
     const album = this.findAlbumById(id);
 
     if (!album) {
-      throw new CustomServiceError('Album not found', 404);
+      throw new CustomServiceError('Album not found', HttpStatus.NOT_FOUND);
     }
 
     Object.assign(album, updateAlbumDto);
@@ -53,7 +53,7 @@ export class AlbumService {
     const index = this.albums.findIndex((album) => album.id === id);
 
     if (index === -1) {
-      throw new CustomServiceError('Album not found', 404);
+      throw new CustomServiceError('Album not found', HttpStatus.NOT_FOUND);
     }
 
     this.clearRelatedTracks(id);

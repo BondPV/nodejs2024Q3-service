@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { CreateArtistDto } from './dto/create-artist.dto';
 import { UpdateArtistDto } from './dto/update-artist.dto';
@@ -29,7 +29,7 @@ export class ArtistService {
     const artist = this.findArtistById(id);
 
     if (!artist) {
-      throw new CustomServiceError('Artist not found', 404);
+      throw new CustomServiceError('Artist not found', HttpStatus.NOT_FOUND);
     }
 
     return this.toSafeArtist(artist);
@@ -39,7 +39,7 @@ export class ArtistService {
     const artist = this.findArtistById(id);
 
     if (!artist) {
-      throw new CustomServiceError('Artist not found', 404);
+      throw new CustomServiceError('Artist not found', HttpStatus.NOT_FOUND);
     }
 
     Object.assign(artist, updateArtistDto);
@@ -51,7 +51,7 @@ export class ArtistService {
     const index = this.artists.findIndex((artist) => artist.id === id);
 
     if (index === -1) {
-      throw new CustomServiceError('Artist not found', 404);
+      throw new CustomServiceError('Artist not found', HttpStatus.NOT_FOUND);
     }
 
     this.clearRelatedTracksAndAlbums(id);
