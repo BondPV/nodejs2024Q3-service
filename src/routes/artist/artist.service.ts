@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { CreateArtistDto } from './dto/create-artist.dto';
 import { UpdateArtistDto } from './dto/update-artist.dto';
 import { Artist } from './entities/artist.entity';
-import { randomUUID } from 'crypto';
 import { CustomServiceError } from '../../utils/customServiceError';
 import { getDB } from '../../db';
 
@@ -11,44 +11,86 @@ export class ArtistService {
   private readonly artists: Artist[] = getDB().artists;
 
   create({ name, grammy }: CreateArtistDto) {
-    const artist = {
+    const artist: Artist = {
       id: randomUUID(),
       name,
       grammy,
     };
     this.artists.push(artist);
-    return artist;
+
+    return this.toSafeArtist(artist);
   }
 
   findAll() {
-    return this.artists;
+    return this.artists.map(this.toSafeArtist);
   }
 
   findOne(id: string) {
-    const artist = this.artists.find((artist) => artist.id === id);
-    if (!artist) throw new CustomServiceError('Artist not found', 404);
-    return artist;
+    const artist = this.findArtistById(id);
+
+    if (!artist) {
+      throw new CustomServiceError('Artist not found', 404);
+    }
+
+    return this.toSafeArtist(artist);
   }
 
   update(id: string, updateArtistDto: UpdateArtistDto) {
-    const artist = this.artists.find((artist) => artist.id === id);
-    if (!artist) throw new CustomServiceError('Artist not found', 404);
-    return Object.assign(artist, updateArtistDto);
+    const artist = this.findArtistById(id);
+
+    if (!artist) {
+      throw new CustomServiceError('Artist not found', 404);
+    }
+
+    Object.assign(artist, updateArtistDto);
+
+    return this.toSafeArtist(artist);
   }
 
   remove(id: string) {
     const index = this.artists.findIndex((artist) => artist.id === id);
-    if (index === -1) throw new CustomServiceError('Artist not found', 404);
+
+    if (index === -1) {
+      throw new CustomServiceError('Artist not found', 404);
+    }
+
+    this.clearRelatedTracksAndAlbums(id);
+    this.removeFromFavorites(id);
+
+    this.artists.splice(index, 1);
+
+    return { message: 'Artist removed successfully' };
+  }
+
+  private findArtistById(id: string): Artist | undefined {
+    return this.artists.find((artist) => artist.id === id);
+  }
+
+  private clearRelatedTracksAndAlbums(artistId: string): void {
     getDB().tracks.forEach((track) => {
-      if (track.artistId === id) track.artistId = null;
+      if (track.artistId === artistId) {
+        track.artistId = null;
+      }
     });
+
     getDB().albums.forEach((album) => {
-      if (album.artistId === id) album.artistId = null;
+      if (album.artistId === artistId) {
+        album.artistId = null;
+      }
     });
+  }
 
-    const favIndex = getDB().favorites.artists.indexOf(id);
-    if (favIndex !== -1) getDB().favorites.artists.splice(favIndex, 1);
+  private removeFromFavorites(artistId: string): void {
+    const favorites = getDB().favorites.artists;
+    const index = favorites.indexOf(artistId);
 
-    return this.artists.splice(index, 1);
+    if (index !== -1) {
+      favorites.splice(index, 1);
+    }
+  }
+
+  private toSafeArtist(artist: Artist) {
+    const { ...safeArtist } = artist;
+    return safeArtist;
   }
 }
