@@ -1,14 +1,13 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
-import { randomUUID } from 'crypto';
+import { PrismaClient } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePasswordDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
 import { CustomServiceError } from '../../utils/customServiceError';
-import { getDB } from '../../db';
 
 @Injectable()
 export class UserService {
-  private readonly users: User[] = getDB().users;
+  private readonly prisma = new PrismaClient();
 
   private toSafeUser(user: User) {
     const safeUser = { ...user };
@@ -17,26 +16,27 @@ export class UserService {
     return safeUser;
   }
 
-  create({ login, password }: CreateUserDto) {
-    const user: User = {
-      id: randomUUID(),
-      login,
-      password,
-      version: 1,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
-    this.users.push(user);
+  async create({ login, password }: CreateUserDto): Promise<User> {
+    const user = await this.prisma.user.create({
+      data: {
+        login,
+        password,
+      },
+    });
 
     return this.toSafeUser(user);
   }
 
-  findAll() {
-    return this.users.map(this.toSafeUser);
+  async findAll(): Promise<User[]> {
+    const users = await this.prisma.user.findMany();
+
+    return users.map(this.toSafeUser);
   }
 
-  findOne(id: string) {
-    const user = this.users.find((user) => user.id === id);
+  async findOne(id: string): Promise<User> {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+    });
 
     if (!user) {
       throw new CustomServiceError('User not found', HttpStatus.NOT_FOUND);
@@ -45,8 +45,13 @@ export class UserService {
     return this.toSafeUser(user);
   }
 
-  update(id: string, { oldPassword, newPassword }: UpdatePasswordDto) {
-    const user = this.users.find((user) => user.id === id);
+  async update(
+    id: string,
+    { oldPassword, newPassword }: UpdatePasswordDto,
+  ): Promise<User> {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+    });
 
     if (!user) {
       throw new CustomServiceError('User not found', HttpStatus.NOT_FOUND);
@@ -59,21 +64,30 @@ export class UserService {
       );
     }
 
-    user.password = newPassword;
-    user.updatedAt = Date.now();
-    user.version++;
+    const updatedUser = await this.prisma.user.update({
+      where: { id },
+      data: {
+        password: newPassword,
+        updatedAt: new Date(),
+        version: user.version + 1,
+      },
+    });
 
-    return this.toSafeUser(user);
+    return this.toSafeUser(updatedUser);
   }
 
-  remove(id: string) {
-    const index = this.users.findIndex((user) => user.id === id);
+  async remove(id: string): Promise<{ message: string }> {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+    });
 
-    if (index === -1) {
+    if (!user) {
       throw new CustomServiceError('User not found', HttpStatus.NOT_FOUND);
     }
 
-    this.users.splice(index, 1);
+    await this.prisma.user.delete({
+      where: { id },
+    });
 
     return { message: 'User removed successfully' };
   }
