@@ -1,4 +1,4 @@
-FROM node:22-alpine
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
@@ -6,10 +6,19 @@ COPY ["package.json", "package-lock.json*", "./"]
 
 COPY prisma ./prisma
 
-COPY doc ./doc
-
-RUN npm ci && npx prisma generate && npm cache clean --force
+RUN npm i --force && npm cache clean --force
 
 COPY --chown=node:node . .
 
-CMD ["npm", "run", "start:dev"]
+RUN npm run build
+
+
+FROM node:22-alpine
+
+WORKDIR /app
+
+COPY --from=builder /app .
+
+EXPOSE ${PORT}
+
+CMD ["npm", "run", "start:migrate:dev"]

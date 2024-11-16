@@ -23,6 +23,7 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Post()
+  @UseFilters(CustomServiceErrorFilter)
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'User created successfully.',

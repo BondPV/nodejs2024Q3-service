@@ -1,4 +1,5 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
+import { plainToClass } from 'class-transformer';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePasswordDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
@@ -9,28 +10,29 @@ import { PrismaService } from '../../db/prisma.service';
 export class UserService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private toSafeUser(user: User) {
-    const safeUser = { ...user };
-    delete safeUser.password;
-
-    return safeUser;
-  }
-
-  async create({ login, password }: CreateUserDto): Promise<User> {
-    const user = await this.prisma.user.create({
-      data: {
-        login,
-        password,
-      },
+  async create(dto: CreateUserDto) {
+    const existingUser = await this.prisma.user.findUnique({
+      where: { login: dto.login },
     });
 
-    return this.toSafeUser(user);
+    if (existingUser) {
+      throw new CustomServiceError(
+        'User with this login already exists',
+        HttpStatus.CONFLICT,
+      );
+    }
+
+    const newUser = await this.prisma.user.create({
+      data: dto,
+    });
+
+    return plainToClass(User, newUser);
   }
 
   async findAll(): Promise<User[]> {
     const users = await this.prisma.user.findMany();
 
-    return users.map(this.toSafeUser);
+    return users.map((user) => plainToClass(User, user));
   }
 
   async findOne(id: string): Promise<User> {
@@ -42,7 +44,7 @@ export class UserService {
       throw new CustomServiceError('User not found', HttpStatus.NOT_FOUND);
     }
 
-    return this.toSafeUser(user);
+    return plainToClass(User, user);
   }
 
   async update(
@@ -66,14 +68,10 @@ export class UserService {
 
     const updatedUser = await this.prisma.user.update({
       where: { id },
-      data: {
-        password: newPassword,
-        updatedAt: new Date(),
-        version: user.version + 1,
-      },
+      data: { version: { increment: 1 }, password: newPassword },
     });
 
-    return this.toSafeUser(updatedUser);
+    return plainToClass(User, updatedUser);
   }
 
   async remove(id: string): Promise<{ message: string }> {

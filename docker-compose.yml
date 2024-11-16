@@ -3,19 +3,18 @@ services:
     container_name: server
     restart: always
     build:
-      dockerfile: Dockerfile
       context: .
+      dockerfile: Dockerfile
     volumes:
       - ./src:/app/src
     ports:
       - ${PORT}:${PORT}
     env_file:
       - .env
+    environment:
+    - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgresdb:${POSTGRES_PORT}/${POSTGRES_DB}?schema=public
     depends_on:
       - postgresdb
-    environment:
-      PORT: ${PORT}
-      DATABASE_URL: ${DATABASE_URL}
     networks:
       - home-library-network
 
@@ -25,19 +24,22 @@ services:
     restart: always
     ports:
       - ${POSTGRES_PORT}:${POSTGRES_PORT}
+    env_file:
+    - .env
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
-    networks:
-      - home-library-network
+      PGPORT: ${POSTGRES_PORT}
     volumes:
       - db-data:/var/lib/postgresql/data
+    networks:
+      - home-library-network
 
 networks:
   home-library-network:
+    external: false
     driver: bridge
 
 volumes:
   db-data:
-    driver: local
