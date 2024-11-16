@@ -9,22 +9,10 @@ import { PrismaService } from '../../db/prisma.service';
 export class TrackService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create({
-    name,
-    duration,
-    artistId,
-    albumId,
-  }: CreateTrackDto): Promise<Track> {
-    const track = await this.prisma.track.create({
-      data: {
-        name,
-        duration,
-        artistId: artistId ?? null,
-        albumId: albumId ?? null,
-      },
-    });
+  async create(dto: CreateTrackDto): Promise<Track> {
+    const newTrack = await this.prisma.track.create({ data: dto });
 
-    return track;
+    return newTrack;
   }
 
   async findAll(): Promise<Track[]> {

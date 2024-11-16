@@ -1,13 +1,13 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePasswordDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
 import { CustomServiceError } from '../../utils/customServiceError';
+import { PrismaService } from '../../db/prisma.service';
 
 @Injectable()
 export class UserService {
-  private readonly prisma = new PrismaClient();
+  constructor(private readonly prisma: PrismaService) {}
 
   private toSafeUser(user: User) {
     const safeUser = { ...user };
