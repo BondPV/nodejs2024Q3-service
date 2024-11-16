@@ -1,92 +1,66 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
-import { randomUUID } from 'crypto';
 import { CreateAlbumDto } from './dto/create-album.dto';
 import { UpdateAlbumDto } from './dto/update-album.dto';
 import { Album } from './entities/album.entity';
 import { CustomServiceError } from '../../utils/customServiceError';
-import { getDB } from '../../db';
+import { PrismaService } from '../../db/prisma.service';
 
 @Injectable()
 export class AlbumService {
-  private readonly albums: Album[] = getDB().albums;
+  constructor(private readonly prisma: PrismaService) {}
 
-  create({ name, year, artistId }: CreateAlbumDto) {
-    const album: Album = {
-      id: randomUUID(),
-      name,
-      year,
-      artistId: artistId ?? null,
-    };
+  async create(dto: CreateAlbumDto): Promise<Album> {
+    const newAlbum = await this.prisma.album.create({ data: dto });
 
-    this.albums.push(album);
-
-    return this.toSafeAlbum(album);
+    return newAlbum;
   }
 
-  findAll() {
-    return this.albums.map(this.toSafeAlbum);
+  async findAll(): Promise<Album[]> {
+    return this.prisma.album.findMany();
   }
 
-  findOne(id: string) {
-    const album = this.findAlbumById(id);
+  async findOne(id: string): Promise<Album> {
+    const album = await this.prisma.album.findUnique({
+      where: { id },
+    });
 
     if (!album) {
       throw new CustomServiceError('Album not found', HttpStatus.NOT_FOUND);
     }
 
-    return this.toSafeAlbum(album);
+    return album;
   }
 
-  update(id: string, updateAlbumDto: UpdateAlbumDto) {
-    const album = this.findAlbumById(id);
+  async update(id: string, updateAlbumDto: UpdateAlbumDto): Promise<Album> {
+    const album = await this.prisma.album.findUnique({
+      where: { id },
+    });
 
     if (!album) {
       throw new CustomServiceError('Album not found', HttpStatus.NOT_FOUND);
     }
 
-    Object.assign(album, updateAlbumDto);
+    const updatedAlbum = await this.prisma.album.update({
+      where: { id },
+      data: updateAlbumDto,
+    });
 
-    return this.toSafeAlbum(album);
+    return updatedAlbum;
   }
 
-  remove(id: string) {
-    const index = this.albums.findIndex((album) => album.id === id);
+  async remove(id: string): Promise<{ message: string }> {
+    const album = await this.prisma.album.findUnique({
+      where: { id },
+    });
 
-    if (index === -1) {
+    if (!album) {
       throw new CustomServiceError('Album not found', HttpStatus.NOT_FOUND);
     }
 
-    this.clearRelatedTracks(id);
-    this.removeFromFavorites(id);
-
-    this.albums.splice(index, 1);
+    await this.prisma.album.delete({
+      where: { id },
+    });
 
     return { message: 'Album removed successfully' };
-  }
-
-  private findAlbumById(id: string): Album | undefined {
-    return this.albums.find((album) => album.id === id);
-  }
-
-  private clearRelatedTracks(albumId: string): void {
-    getDB().tracks.forEach((track) => {
-      if (track.albumId === albumId) {
-        track.albumId = null;
-      }
-    });
-  }
-
-  private removeFromFavorites(albumId: string): void {
-    const favorites = getDB().favorites.albums;
-    const index = favorites.indexOf(albumId);
-
-    if (index !== -1) {
-      favorites.splice(index, 1);
-    }
-  }
-
-  private toSafeAlbum(album: Album) {
-    const { ...safeAlbum } = album;
-    return safeAlbum;
   }
 }
