@@ -1,96 +1,66 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
-import { randomUUID } from 'crypto';
 import { CreateArtistDto } from './dto/create-artist.dto';
 import { UpdateArtistDto } from './dto/update-artist.dto';
 import { Artist } from './entities/artist.entity';
 import { CustomServiceError } from '../../utils/customServiceError';
-import { getDB } from '../../db';
+import { PrismaService } from '../../db/prisma.service';
 
 @Injectable()
 export class ArtistService {
-  private readonly artists: Artist[] = getDB().artists;
+  constructor(private readonly prisma: PrismaService) {}
 
-  create({ name, grammy }: CreateArtistDto) {
-    const artist: Artist = {
-      id: randomUUID(),
-      name,
-      grammy,
-    };
-    this.artists.push(artist);
+  async create(dto: CreateArtistDto) {
+    const newArtist = await this.prisma.artist.create({ data: dto });
 
-    return this.toSafeArtist(artist);
+    return newArtist;
   }
 
-  findAll() {
-    return this.artists.map(this.toSafeArtist);
+  async findAll(): Promise<Artist[]> {
+    return this.prisma.artist.findMany();
   }
 
-  findOne(id: string) {
-    const artist = this.findArtistById(id);
+  async findOne(id: string): Promise<Artist> {
+    const artist = await this.prisma.artist.findUnique({
+      where: { id },
+    });
 
     if (!artist) {
       throw new CustomServiceError('Artist not found', HttpStatus.NOT_FOUND);
     }
 
-    return this.toSafeArtist(artist);
+    return artist;
   }
 
-  update(id: string, updateArtistDto: UpdateArtistDto) {
-    const artist = this.findArtistById(id);
+  async update(id: string, updateArtistDto: UpdateArtistDto): Promise<Artist> {
+    const artist = await this.prisma.artist.findUnique({
+      where: { id },
+    });
 
     if (!artist) {
       throw new CustomServiceError('Artist not found', HttpStatus.NOT_FOUND);
     }
 
-    Object.assign(artist, updateArtistDto);
+    const updatedArtist = await this.prisma.artist.update({
+      where: { id },
+      data: updateArtistDto,
+    });
 
-    return this.toSafeArtist(artist);
+    return updatedArtist;
   }
 
-  remove(id: string) {
-    const index = this.artists.findIndex((artist) => artist.id === id);
+  async remove(id: string): Promise<{ message: string }> {
+    const artist = await this.prisma.artist.findUnique({
+      where: { id },
+    });
 
-    if (index === -1) {
+    if (!artist) {
       throw new CustomServiceError('Artist not found', HttpStatus.NOT_FOUND);
     }
 
-    this.clearRelatedTracksAndAlbums(id);
-    this.removeFromFavorites(id);
-
-    this.artists.splice(index, 1);
+    await this.prisma.artist.delete({
+      where: { id },
+    });
 
     return { message: 'Artist removed successfully' };
-  }
-
-  private findArtistById(id: string): Artist | undefined {
-    return this.artists.find((artist) => artist.id === id);
-  }
-
-  private clearRelatedTracksAndAlbums(artistId: string): void {
-    getDB().tracks.forEach((track) => {
-      if (track.artistId === artistId) {
-        track.artistId = null;
-      }
-    });
-
-    getDB().albums.forEach((album) => {
-      if (album.artistId === artistId) {
-        album.artistId = null;
-      }
-    });
-  }
-
-  private removeFromFavorites(artistId: string): void {
-    const favorites = getDB().favorites.artists;
-    const index = favorites.indexOf(artistId);
-
-    if (index !== -1) {
-      favorites.splice(index, 1);
-    }
-  }
-
-  private toSafeArtist(artist: Artist) {
-    const { ...safeArtist } = artist;
-    return safeArtist;
   }
 }
