@@ -4,6 +4,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePasswordDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
 import { CustomServiceError } from '../../utils/customServiceError';
+import { generateHash } from '../../utils/generateHash';
 import { PrismaService } from '../../db/prisma.service';
 
 @Injectable()
@@ -22,8 +23,12 @@ export class UserService {
       );
     }
 
+    const hashedPassword = await generateHash(dto.password);
     const newUser = await this.prisma.user.create({
-      data: dto,
+      data: {
+        ...dto,
+        password: hashedPassword,
+      },
     });
 
     return plainToClass(User, newUser);
@@ -66,9 +71,11 @@ export class UserService {
       );
     }
 
+    const hashedNewPassword = await generateHash(newPassword);
+
     const updatedUser = await this.prisma.user.update({
       where: { id },
-      data: { version: { increment: 1 }, password: newPassword },
+      data: { version: { increment: 1 }, password: hashedNewPassword },
     });
 
     return plainToClass(User, updatedUser);
