@@ -17,15 +17,34 @@ git clone https://github.com/BondPV/nodejs2024Q3-service.git
 npm install
 ```
 
-## Running application
+## Create .env file
 
 ```
-npm start
+cp .env.example .env
+```
+
+## Start Docker containers
+
+```
+npm run docker:up
+```
+or
+
+```
+docker compose up
 ```
 
 After starting the app on port (4000 as default) you can open
 in your browser OpenAPI documentation by typing http://localhost:4000/doc/.
 For more information about OpenAPI/Swagger please visit https://swagger.io/.
+
+## Security vulnerabilities
+
+Run scan security vulnerabilities
+
+```
+npm run docker:scan
+```
 
 ## Testing
 
@@ -34,7 +53,7 @@ After application running open new terminal and enter:
 To run all tests without authorization
 
 ```
-npm run test
+npm run test:auth
 ```
 
 To run only one of all test suites

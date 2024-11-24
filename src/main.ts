@@ -6,15 +6,37 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder, OpenAPIObject } from '@nestjs/swagger';
 import { load } from 'js-yaml';
+import { CustomLoggerService } from './logger/logger.service';
 
 dotenv.config();
 const port = process.env.PORT || 4000;
 const swaggerDoc = process.env.SWAGGER_DOC || 'file';
 
+const addLogListeners = (logger: CustomLoggerService): void => {
+  process.on('uncaughtException', (error: Error) => {
+    logger.error('Uncaught Exception:', error.stack);
+    process.exit(1);
+  });
+
+  process.on('unhandledRejection', (reason) => {
+    logger.error(
+      'Unhandled Rejection:',
+      reason instanceof Error ? reason.stack : String(reason),
+    );
+    process.exit(1);
+  });
+};
+
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    bufferLogs: true,
+  });
 
   app.useGlobalPipes(new ValidationPipe());
+
+  const logger = app.get(CustomLoggerService);
+  app.useLogger(logger);
+  addLogListeners(logger);
 
   if (swaggerDoc === 'file') {
     const file = await readFile(
@@ -35,6 +57,10 @@ async function bootstrap() {
 
   await app.listen(port);
   console.log(`Server is running on http://localhost:${port}/`);
+  console.log(`OpenAPI: http://localhost:${port}/doc`);
 }
 
-bootstrap();
+bootstrap().catch((error) => {
+  const logger = new CustomLoggerService();
+  logger.error('Error during application bootstrap', error.stack);
+});
