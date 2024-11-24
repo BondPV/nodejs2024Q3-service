@@ -1,5 +1,6 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
+import { compare } from 'bcrypt';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePasswordDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
@@ -64,9 +65,11 @@ export class UserService {
       throw new CustomServiceError('User not found', HttpStatus.NOT_FOUND);
     }
 
-    if (user.password !== oldPassword) {
+    const isOldPasswordValid = await compare(oldPassword, user.password);
+
+    if (!isOldPasswordValid) {
       throw new CustomServiceError(
-        'Password is incorrect',
+        'Old Password is incorrect',
         HttpStatus.FORBIDDEN,
       );
     }
@@ -75,7 +78,10 @@ export class UserService {
 
     const updatedUser = await this.prisma.user.update({
       where: { id },
-      data: { version: { increment: 1 }, password: hashedNewPassword },
+      data: {
+        version: { increment: 1 },
+        password: hashedNewPassword,
+      },
     });
 
     return plainToClass(User, updatedUser);
