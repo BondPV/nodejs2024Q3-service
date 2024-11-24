@@ -53,7 +53,7 @@ After application running open new terminal and enter:
 To run all tests without authorization
 
 ```
-npm run test
+npm run test:auth
 ```
 
 To run only one of all test suites
