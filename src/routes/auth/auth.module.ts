@@ -4,6 +4,10 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { UserModule } from '../user/user.module';
 import { JWT_CONSTANTS } from './auth.constants';
+import { PrismaService } from 'src/db/prisma.service';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { AuthGuard } from './auth.guard';
+import { CustomServiceErrorFilter } from 'src/utils/customServiceError.filter';
 
 @Module({
   imports: [
@@ -14,7 +18,18 @@ import { JWT_CONSTANTS } from './auth.constants';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService],
+  providers: [
+    AuthService,
+    PrismaService,
+    {
+      provide: APP_GUARD,
+      useClass: AuthGuard,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: CustomServiceErrorFilter,
+    },
+  ],
   exports: [AuthService],
 })
 export class AuthModule {}
