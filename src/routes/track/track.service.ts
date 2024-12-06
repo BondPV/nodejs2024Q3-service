@@ -1,48 +1,28 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
-import { randomUUID } from 'crypto';
 import { CreateTrackDto } from './dto/create-track.dto';
 import { UpdateTrackDto } from './dto/update-track.dto';
 import { Track } from './entities/track.entity';
 import { CustomServiceError } from '../../utils/customServiceError';
-import { getDB } from '../../db';
+import { PrismaService } from '../../db/prisma.service';
 
 @Injectable()
 export class TrackService {
-  private readonly tracks: Track[] = getDB().tracks;
+  constructor(private readonly prisma: PrismaService) {}
 
-  private findTrackById(id: string): Track | undefined {
-    return this.tracks.find((track) => track.id === id);
+  async create(dto: CreateTrackDto): Promise<Track> {
+    const newTrack = await this.prisma.track.create({ data: dto });
+
+    return newTrack;
   }
 
-  private removeFromFavorites(trackId: string): void {
-    const favorites = getDB().favorites.tracks;
-    const favIndex = favorites.indexOf(trackId);
-
-    if (favIndex !== -1) {
-      favorites.splice(favIndex, 1);
-    }
+  async findAll(): Promise<Track[]> {
+    return this.prisma.track.findMany();
   }
 
-  create({ name, duration, artistId, albumId }: CreateTrackDto) {
-    const track: Track = {
-      id: randomUUID(),
-      name,
-      duration,
-      artistId: artistId ?? null,
-      albumId: albumId ?? null,
-    };
-
-    this.tracks.push(track);
-
-    return track;
-  }
-
-  findAll() {
-    return this.tracks;
-  }
-
-  findOne(id: string) {
-    const track = this.findTrackById(id);
+  async findOne(id: string): Promise<Track> {
+    const track = await this.prisma.track.findUnique({
+      where: { id },
+    });
 
     if (!track) {
       throw new CustomServiceError('Track not found', HttpStatus.NOT_FOUND);
@@ -51,27 +31,35 @@ export class TrackService {
     return track;
   }
 
-  update(id: string, updateTrackDto: UpdateTrackDto) {
-    const track = this.findTrackById(id);
+  async update(id: string, updateTrackDto: UpdateTrackDto): Promise<Track> {
+    const track = await this.prisma.track.findUnique({
+      where: { id },
+    });
 
     if (!track) {
       throw new CustomServiceError('Track not found', HttpStatus.NOT_FOUND);
     }
 
-    Object.assign(track, updateTrackDto);
+    const updatedTrack = await this.prisma.track.update({
+      where: { id },
+      data: updateTrackDto,
+    });
 
-    return track;
+    return updatedTrack;
   }
 
-  remove(id: string) {
-    const index = this.tracks.findIndex((track) => track.id === id);
+  async remove(id: string): Promise<{ message: string }> {
+    const track = await this.prisma.track.findUnique({
+      where: { id },
+    });
 
-    if (index === -1) {
+    if (!track) {
       throw new CustomServiceError('Track not found', HttpStatus.NOT_FOUND);
     }
 
-    this.removeFromFavorites(id);
-    this.tracks.splice(index, 1);
+    await this.prisma.track.delete({
+      where: { id },
+    });
 
     return { message: 'Track removed successfully' };
   }
